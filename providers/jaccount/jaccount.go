@@ -9,7 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strconv"
+	// "strconv"
 
 	"fmt"
 	"github.com/markbates/goth"
@@ -150,37 +150,42 @@ func newConfig(provider *Provider, authURL, tokenURL string, scopes []string) *o
 }
 
 func userFromReader(r io.Reader, user *goth.User) error {
-	u := struct {
+	type Profile struct{
 		Name      string `json:"name"`
 		Email     string `json:"email"`
 		NickName  string `json:"account"`
-		ID        int    `json:"id"`
-	}{}
-	err := json.NewDecoder(r).Decode(&u)
+		ID        string `json:"id"`
+	}
+	
+	type Response struct {
+		Entities []Profile `json:"entities"`
+	}
+
+	var info Response
+	err := json.NewDecoder(r).Decode(&info)
 	if err != nil {
 		return err
 	}
+	u := info.Entities[0]
 	user.Email = u.Email
 	user.Name = u.Name
 	user.NickName = u.NickName
-	user.UserID = strconv.Itoa(u.ID)
+	user.UserID = u.ID
 	return nil
 }
 
 //RefreshTokenAvailable refresh token is provided by auth provider or not
 func (p *Provider) RefreshTokenAvailable() bool {
-	// return true
-	return false
+	return true
 }
 
 //RefreshToken get new access token based on the refresh token
 func (p *Provider) RefreshToken(refreshToken string) (*oauth2.Token, error) {
-	// token := &oauth2.Token{RefreshToken: refreshToken}
-	// ts := p.config.TokenSource(goth.ContextForClient(p.Client()), token)
-	// newToken, err := ts.Token()
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// return newToken, err
-	return false
+	token := &oauth2.Token{RefreshToken: refreshToken}
+	ts := p.config.TokenSource(goth.ContextForClient(p.Client()), token)
+	newToken, err := ts.Token()
+	if err != nil {
+		return nil, err
+	}
+	return newToken, err
 }

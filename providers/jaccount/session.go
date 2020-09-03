@@ -1,4 +1,4 @@
-package gitea
+package jaccount
 
 import (
 	"encoding/json"
